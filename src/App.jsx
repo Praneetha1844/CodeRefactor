@@ -6,6 +6,7 @@ function App() {
   const [code, setCode] = useState("// Write your code here...");
   const [language, setLanguage] = useState("javascript");
   const [output, setOutput] = useState("");
+  const [optimizedCode, setOptimizedCode] = useState("");
 
   const getLanguageId = (lang) => {
     const languageMap = {
@@ -53,6 +54,27 @@ function App() {
     }
   };
 
+  const optimizeCode = async () => {
+    try {
+      const response = await axios.post(
+        "http://localhost:11434/api/generate",
+        {
+          model: "codellama",
+          prompt: `Optimize the following ${language} code for readability, efficiency, and best practices:\n\n${code}`,
+          stream: false,
+        },
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      setOptimizedCode(response.data.response.trim());
+    } catch (error) {
+      console.error("Error:", error);
+      setOptimizedCode("Error: Unable to optimize the code.");
+    }
+  };
+
   return (
     <div className="bg-[#080715] min-h-screen">
       {/* Navbar */}
@@ -65,47 +87,13 @@ function App() {
 
       {/* Sections */}
       <div className="flex flex-col items-center p-4 pt-20">
-        {/* Section 1 */}
-        <div id="section1" className="p-4 mt-[100px]">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-[#fc0060] to-[#7500e7] bg-clip-text text-transparent">
-            About Code Refactor
-          </h1>
-          <p className="text-white mt-4 min-w-[1000px]">
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque lobortis est sit amet leo ullamcorper, id bibendum nisi dignissim. Phasellus ligula dolor, cursus vitae pretium id, feugiat et magna. Praesent id vulputate ipsum. Curabitur vitae justo non turpis finibus hendrerit et sed nisl. Duis efficitur leo quis neque finibus feugiat. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur iaculis a est eget interdum. Vestibulum mattis, enim in facilisis sodales, risus ante fermentum lacus, eget facilisis nisl sem quis nunc. In sollicitudin, est non elementum euismod, felis arcu imperdiet tellus, vitae volutpat ante nisi quis tellus. Duis ultricies eleifend volutpat. Etiam gravida metus semper posuere pulvinar. Nullam scelerisque enim ac finibus interdum. Sed sit amet ipsum dictum, condimentum nunc in, iaculis purus. Nullam vitae tempus sem. Praesent elit neque, vulputate vitae feugiat in, molestie maximus nibh. Etiam dapibus lectus justo, quis tincidunt dui tincidunt vitae.
-          </p>
-          <p className="text-white mt-4 min-w-[1000px]">
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque lobortis est sit amet leo ullamcorper, id bibendum nisi dignissim. Phasellus ligula dolor, cursus vitae pretium id, feugiat et magna. Praesent id vulputate ipsum. Curabitur vitae justo non turpis finibus hendrerit et sed nisl. Duis efficitur leo quis neque finibus feugiat. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur iaculis a est eget interdum. Vestibulum mattis, enim in facilisis sodales, risus ante fermentum lacus, eget facilisis nisl sem quis nunc. In sollicitudin, est non elementum euismod, felis arcu imperdiet tellus, vitae volutpat ante nisi quis tellus. Duis ultricies eleifend volutpat. Etiam gravida metus semper posuere pulvinar. Nullam scelerisque enim ac finibus interdum. Sed sit amet ipsum dictum, condimentum nunc in, iaculis purus. Nullam vitae tempus sem. Praesent elit neque, vulputate vitae feugiat in, molestie maximus nibh. Etiam dapibus lectus justo, quis tincidunt dui tincidunt vitae.
-          </p>
-        </div>
-
-        {/* Section 2 (Steps) */}
-        <div id="section2" className="flex flex-col gap-6 mt-[200px] self-center">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-[#fc0060] to-[#7500e7] bg-clip-text text-transparent text-center">
-            Steps to Use
-          </h1>
-          {[
-            { step: "1", title: "Understand", desc: "Gather requirements." },
-            { step: "2", title: "Plan", desc: "Design the structure." },
-            { step: "3", title: "Implement", desc: "Write clean code." },
-            { step: "4", title: "Test", desc: "Refine before deployment." },
-          ].map((item) => (
-            <div key={item.step} className="border border-gray-500 p-4 rounded-lg text-white max-w-xs text-center shadow-md">
-              <div className="text-3xl font-bold bg-gradient-to-r from-[#fc0060] to-[#7500e7] bg-clip-text text-transparent">
-                {item.step}
-              </div>
-              <h2 className="text-xl font-semibold mt-2">{item.title}</h2>
-              <p className="text-sm mt-1">{item.desc}</p>
-            </div>
-          ))}
-        </div>
-
         {/* Code Editor Section */}
         <div id="editor" className="bg-[#080715] min-h-screen flex flex-col p-4 mt-[200px] self-center">
           <h1 className="text-5xl font-bold bg-gradient-to-r from-[#fc0060] to-[#7500e7] bg-clip-text text-transparent self-center mb-[100px]">
             Code Editor
           </h1>
 
-          <div className="flex justify-center ">
+          <div className="flex justify-center">
             <div className="w-full max-w-6xl bg-gray-800 rounded-lg shadow-lg overflow-hidden p-4">
               {/* Language Selector */}
               <div className="mb-4 flex justify-between items-center">
@@ -132,27 +120,38 @@ function App() {
                 onChange={(value) => setCode(value || "")}
               />
 
-              {/* Run Button */}
-              <button
-                className="mt-4 px-6 py-2 bg-blue-500 rounded hover:bg-blue-700 text-white font-semibold w-full"
-                onClick={runCode}
-              >
-                Compile & Run
-              </button>
+              {/* Run & Optimize Buttons */}
+              <div className="flex gap-4 mt-4">
+                <button
+                  className="px-6 py-2 bg-blue-500 rounded hover:bg-blue-700 text-white font-semibold w-1/2"
+                  onClick={runCode}
+                >
+                  Compile & Run
+                </button>
+
+                <button
+                  className="px-6 py-2 bg-green-500 rounded hover:bg-green-700 text-white font-semibold w-1/2"
+                  onClick={optimizeCode}
+                >
+                  Optimize Code
+                </button>
+              </div>
 
               {/* Output Section */}
               <div className="mt-4 bg-black text-white p-4 rounded-lg">
-                <h2 className="text-xl font-bold">Output:</h2>
+                <h2 className="text-lg font-semibold">Output:</h2>
                 <pre className="whitespace-pre-wrap">{output}</pre>
               </div>
+
+              {/* Optimized Code Section */}
+              {optimizedCode && (
+                <div className="mt-4 bg-gray-900 text-white p-4 rounded-lg">
+                  <h2 className="text-lg font-semibold">Optimized Code:</h2>
+                  <pre className="whitespace-pre-wrap">{optimizedCode}</pre>
+                </div>
+              )}
             </div>
           </div>
-          <button
-                className="mt-[70px] px-6 py-2 bg-blue-500 rounded hover:bg-blue-700 text-white font-semibold "
-                
-              >
-                Optmize
-              </button>
         </div>
       </div>
     </div>
